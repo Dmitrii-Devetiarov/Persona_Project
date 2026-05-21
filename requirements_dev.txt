@@ -1,0 +1,46 @@
+# Python 3.11
+
+# Ядро: ночная сборка PyTorch под CUDA 12.8 (SM120/Blackwell)
+--extra-index-url https://download.pytorch.org/whl/nightly/cu128
+torch>=2.7.0.dev
+torchvision>=0.22.0.dev
+torchaudio>=2.7.0.dev
+
+# Эмбеддинги и семантический анализ
+sentence-transformers>=4.0.0
+transformers>=4.49.0
+
+# spaCy с русской моделью
+spacy==3.8.0
+ru_core_news_sm @ file:///home/li_sys/Persona_Project/models/ru_core_news_sm-3.8.0-py3-none-any.whl
+
+# Локальный инференс LLM (4-bit GGUF, оффлоадинг на GPU)
+llama-cpp-python>=0.3.0
+
+# Научные и численные
+numpy>=1.26.4
+scipy>=1.15.0
+scikit-learn>=1.6.0
+
+# Сериализация и данные
+pydantic>=2.10.0
+datasets>=3.3.0
+
+# Инструменты разработки и экспериментов
+jupyterlab>=4.3.0
+ipywidgets>=8.1.0
+tqdm>=4.67.0
+matplotlib>=3.10.0
+
+# Опционально: ускорение вычислений на CPU
+intel-openmp>=2025.0.0
+
+# Веб и API
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+streamlit>=1.28.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+
+# Извлечение ключевых слов
+keybert>=0.8.0

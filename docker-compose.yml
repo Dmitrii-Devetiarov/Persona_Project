@@ -1,0 +1,11 @@
+services:
+  persona:
+    image: persona-project:latest
+    pull_policy: never   # ← эта строка
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
