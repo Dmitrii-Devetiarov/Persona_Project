@@ -43,6 +43,14 @@ COPY ui/ ./ui/
 COPY data/ ./data/
 COPY .env.example ./
 
+# 4. Копируем документацию и конфигурацию
+COPY README.md ./
+COPY README_ru.md ./
+COPY LICENSE ./
+COPY docker-compose.yml ./
+COPY third-party/ ./third-party/
+COPY screenshots/ ./screenshots/
+
 EXPOSE 8501
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
