@@ -93,4 +93,8 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 - [sentence-transformers](https://www.sbert.net/) — embedding models library
 - [spaCy](https://spacy.io/) — industrial-strength NLP toolkit
 - [KeyBERT](https://maartengr.github.io/KeyBERT/) — keyword extraction
+<<<<<<< Updated upstream
 - Yandex Cloud — providing access to DeepSeek V3.2
+=======
+- Yandex Cloud — providing access to DeepSeek V3.2
+>>>>>>> Stashed changes

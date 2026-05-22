@@ -18,8 +18,9 @@ RUN pip install --no-cache-dir --target=/install \
     --extra-index-url https://download.pytorch.org/whl/cpu \
     -r requirements.txt
 
-# 4. Качаем модель spaCy (тоже в /install)
-RUN PYTHONPATH=/install python -m spacy download ru_core_news_sm --target /install
+# 4. Качаем обе модели spaCy (русскую и английскую)
+RUN PYTHONPATH=/install python -m spacy download ru_core_news_sm --target /install && \
+    PYTHONPATH=/install python -m spacy download en_core_web_sm --target /install
 
 # ================== СТАДИЯ 2: ФИНАЛ ==================
 FROM python:3.11-slim
@@ -33,7 +34,7 @@ ENV PATH=/usr/local/lib/python3.11/site-packages/bin:$PATH
 # 1. Копируем готовые пакеты из стадии сборки
 COPY --from=builder /install /usr/local/lib/python3.11/site-packages
 
-# 2. Копируем вашу модель e5-large (она и так готова)
+# 2. Копируем модель E5-large
 COPY models/e5-large-lite /app/models/e5-large
 
 # 3. Копируем код проекта

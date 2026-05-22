@@ -12,7 +12,7 @@ notes/
 experiment_log.txt
 logs/
 scripts/
-requirements-dev.txt
+requirements_dev.txt
 requirements_dev.lock
 *.bak
 *.tmp
@@ -20,5 +20,6 @@ requirements_dev.lock
 portable_version/
 models/e5-large
 models/ru_core_news_sm-3.8.0-py3-none-any.whl
+models/en_core_web_sm-any-py3-none-any.whl
 data/persona_core.json
 data/persona_core.json.bak
