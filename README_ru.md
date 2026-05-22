@@ -67,7 +67,49 @@
 
 ## 🚀 Быстрый старт
 
-*Будет добавлено после выбора способа публикации.*
+# Быстрый старт
+
+## Необходимые условия
+
+- [Docker](https://docs.docker.com/get-docker/), установленный на вашем компьютере
+- API-ключ Yandex Cloud с доступом к DeepSeek
+
+## Вариант 1: Загрузка из GitHub Container Registry (рекомендуется)
+
+```bash
+# Загрузите последний образ
+docker pull ghcr.io/dmitrii-devetiarov/persona-project:latest
+
+# Создайте директорию проекта и перейдите в неё
+mkdir persona-memory && cd persona-memory
+
+# Настройте переменные окружения
+cp .env.example .env
+# Отредактируйте .env, указав свои YANDEX_API_KEY и YANDEX_FOLDER_ID
+
+# Создайте пустую директорию data для хранения персоны
+mkdir -p data
+
+# Запустите приложение
+docker compose up
+```
+Откройте http://localhost:8501 в браузере.
+
+## Вариант 2: Сборка из исходников
+
+```bash
+# Клонируйте репозиторий
+git clone https://github.com/Dmitrii-Devetiarov/Persona_Project.git
+cd Persona_Project
+
+# Настройте переменные окружения
+cp .env.example .env
+# Отредактируйте .env, указав свои YANDEX_API_KEY и YANDEX_FOLDER_ID
+
+# Соберите и запустите
+docker compose up
+```
+Откройте http://localhost:8501 в браузере.
 
 ## ⚙️ Конфигурация
 
@@ -84,13 +126,24 @@
 - [ ] Покрытие юнит-тестами критических компонентов
 - [ ] Расширение локализации (добавление новых языков)
 
-## 📝 Лицензия
+# Лицензии сторонних компонентов
 
-Этот проект распространяется под лицензией MIT. См. файл `LICENSE` для подробной информации.
+В этом проекте используются следующие библиотеки с открытым исходным кодом, распространяемые под соответствующими лицензиями:
 
-## 🙏 Благодарности
+| Библиотека | Лицензия |
+|------------|----------|
+| **sentence-transformers** (Nils Reimers) | [Apache 2.0](https://github.com/UKPLab/sentence-transformers/blob/master/LICENSE) |
+| **Streamlit** | [Apache 2.0](https://github.com/streamlit/streamlit/blob/develop/LICENSE) |
+| **OpenAI Python SDK** | [Apache 2.0](https://github.com/openai/openai-python/blob/master/LICENSE) |
+| **KeyBERT**, **spaCy**, **pymorphy3**, **tiktoken** | MIT |
+| **scikit-learn**, **numpy** | BSD 3-Clause |
 
-- [sentence-transformers](https://www.sbert.net/) — библиотека для создания эмбеддингов
-- [spaCy](https://spacy.io/) — инструменты для промышленного NLP
-- [KeyBERT](https://maartengr.github.io/KeyBERT/) — извлечение ключевых слов
-- Yandex Cloud — предоставление доступа к DeepSeek V3.2
+Полные тексты лицензий для компонентов под **Apache 2.0** находятся в директории [`third-party/`](third-party/).
+
+# Благодарности
+
+Отдельная благодарность создателям и мейнтейнерам **sentence-transformers**, **spaCy**, **KeyBERT** и **Streamlit** — ваша работа сделала этот проект возможным.
+
+Благодарю **Yandex Cloud** за предоставление доступа к DeepSeek.
+
+И искреннее спасибо всему open-source сообществу и всем контрибьюторам библиотек, от которых зависит этот проект, — перечисленным выше и многим другим, не названным поимённо, но не менее важным.

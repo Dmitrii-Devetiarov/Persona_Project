@@ -67,7 +67,49 @@ The project runs four parallel analysis streams that converge in the Persona Cor
 
 ## 🚀 Quick start
 
-*To be added once the distribution method is finalized.*
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) installed on your machine
+- Yandex Cloud API key with access to DeepSeek
+
+### Option 1: Pull from GitHub Container Registry (recommended)
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/dmitrii-devetiarov/persona-project:latest
+
+# Create a project directory and navigate into it
+mkdir persona-memory && cd persona-memory
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your YANDEX_API_KEY and YANDEX_FOLDER_ID
+
+# Create empty data directory for persona persistence
+mkdir -p data
+
+# Start the application
+docker compose up
+```
+Open http://localhost:8501 in your browser.
+
+### Option 2: Build from source
+
+### Build from source
+
+```bash
+# Clone the repository
+git clone https://github.com/Dmitrii-Devetiarov/Persona_Project.git
+cd Persona_Project
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your YANDEX_API_KEY and YANDEX_FOLDER_ID
+
+# Build and run
+docker compose up
+```
+Open http://localhost:8501 in your browser.
 
 ## ⚙️ Configuration
 
@@ -86,15 +128,26 @@ The project runs four parallel analysis streams that converge in the Persona Cor
 
 ## 📝 License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+### Third-party licenses
+
+This project uses the following open-source libraries, distributed under their respective licenses:
+
+| Library | License |
+|---------|---------|
+| **sentence-transformers** (Nils Reimers) | [Apache 2.0](https://github.com/UKPLab/sentence-transformers/blob/master/LICENSE) |
+| **Streamlit** | [Apache 2.0](https://github.com/streamlit/streamlit/blob/develop/LICENSE) |
+| **OpenAI Python SDK** | [Apache 2.0](https://github.com/openai/openai-python/blob/master/LICENSE) |
+| **KeyBERT**, **spaCy**, **pymorphy3**, **tiktoken** | MIT |
+| **scikit-learn**, **numpy** | BSD 3-Clause |
+
+Full license texts for **Apache 2.0** components are provided in the [`third-party/`](third-party/) directory.
 
 ## 🙏 Acknowledgements
 
-- [sentence-transformers](https://www.sbert.net/) — embedding models library
-- [spaCy](https://spacy.io/) — industrial-strength NLP toolkit
-- [KeyBERT](https://maartengr.github.io/KeyBERT/) — keyword extraction
-<<<<<<< Updated upstream
-- Yandex Cloud — providing access to DeepSeek V3.2
-=======
-- Yandex Cloud — providing access to DeepSeek V3.2
->>>>>>> Stashed changes
+Special thanks to the creators and maintainers of **sentence-transformers**, **spaCy**, **KeyBERT**, and **Streamlit** — your work made this project possible.
+
+Grateful to **Yandex Cloud** for providing access to DeepSeek.
+
+And a sincere thank you to the entire open-source community and all contributors to the libraries this project depends on — the ones listed above and the many others not named but relied upon.
