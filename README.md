@@ -95,8 +95,6 @@ Open http://localhost:8501 in your browser.
 
 ### Option 2: Build from source
 
-### Build from source
-
 ```bash
 # Clone the repository
 git clone https://github.com/Dmitrii-Devetiarov/Persona_Project.git
