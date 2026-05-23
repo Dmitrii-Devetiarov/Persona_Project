@@ -72,7 +72,7 @@ The project runs four parallel analysis streams that converge in the Persona Cor
 - [Docker](https://docs.docker.com/get-docker/) installed on your machine
 - Yandex Cloud API key with access to DeepSeek
 
-### Option 1: Pull from GitHub Container Registry (recommended)
+### Option 1: Pull from GitHub Container Registry
 
 ```bash
 # Pull the latest image

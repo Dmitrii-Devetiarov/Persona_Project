@@ -74,7 +74,7 @@
 - [Docker](https://docs.docker.com/get-docker/), установленный на вашем компьютере
 - API-ключ Yandex Cloud с доступом к DeepSeek
 
-## Вариант 1: Загрузка из GitHub Container Registry (рекомендуется)
+## Вариант 1: Загрузка из GitHub Container Registry
 
 ```bash
 # Загрузите последний образ
