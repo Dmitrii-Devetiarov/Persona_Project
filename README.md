@@ -72,7 +72,33 @@ The project runs four parallel analysis streams that converge in the Persona Cor
 - [Docker](https://docs.docker.com/get-docker/) installed on your machine
 - Yandex Cloud API key with access to DeepSeek
 
-### Option 1: Pull from GitHub Container Registry
+### Option 1: Build from source
+
+```bash
+# Clone the repository
+git clone https://github.com/Dmitrii-Devetiarov/Persona_Project.git
+cd Persona_Project
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your YANDEX_API_KEY and YANDEX_FOLDER_ID (see Configuration)
+
+# Download and prepare the E5-large model
+# Option A: Download the full model and trim it (requires ~9 GB temporarily)
+python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/multilingual-e5-large')"
+# Then copy only the required files to models/e5-large-lite/ (see structure below)
+
+# Option B: Manually create models/e5-large-lite/ with the following files:
+#   model.safetensors, tokenizer.json, sentencepiece.bpe.model,
+#   tokenizer_config.json, special_tokens_map.json, config.json,
+#   modules.json, sentence_bert_config.json, 1_Pooling/config.json
+
+# Build and run
+docker compose up
+```
+Open http://localhost:8501 in your browser.
+
+### Option 2: Pull from GitHub Container Registry
 
 ```bash
 # Pull the latest image
@@ -81,9 +107,20 @@ docker pull ghcr.io/dmitrii-devetiarov/persona-project:latest
 # Create a project directory and navigate into it
 mkdir persona-memory && cd persona-memory
 
-# Set up environment
-cp .env.example .env
-# Edit .env with your YANDEX_API_KEY and YANDEX_FOLDER_ID
+#Create a file named docker-compose.yml with the following content:
+services:
+  persona:
+    image: ghcr.io/dmitrii-devetiarov/persona-project:latest
+    pull_policy: always
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+# Create .env file with your Yandex Cloud API keys (see Configuration)
 
 # Create empty data directory for persona persistence
 mkdir -p data
@@ -93,21 +130,7 @@ docker compose up
 ```
 Open http://localhost:8501 in your browser.
 
-### Option 2: Build from source
 
-```bash
-# Clone the repository
-git clone https://github.com/Dmitrii-Devetiarov/Persona_Project.git
-cd Persona_Project
-
-# Set up environment
-cp .env.example .env
-# Edit .env with your YANDEX_API_KEY and YANDEX_FOLDER_ID
-
-# Build and run
-docker compose up
-```
-Open http://localhost:8501 in your browser.
 
 ## ⚙️ Configuration
 
@@ -116,6 +139,22 @@ Open http://localhost:8501 in your browser.
 | `YANDEX_API_KEY` | Yandex Cloud service account API key |
 | `YANDEX_FOLDER_ID` | Yandex Cloud folder ID |
 
+Note on the model: The models/e5-large-lite/ folder contains a trimmed version of intfloat/multilingual-e5-large. It excludes pytorch_model.bin, onnx/, openvino/, and other non-essential files, keeping only what sentence-transformers needs to run. This reduces the size from ~9 GB to ~2.2 GB. The model is fully functional.
+
+Required file structure for models/e5-large-lite/:
+
+models/e5-large-lite/
+├── model.safetensors
+├── tokenizer.json
+├── sentencepiece.bpe.model
+├── tokenizer_config.json
+├── special_tokens_map.json
+├── config.json
+├── modules.json
+├── sentence_bert_config.json
+└── 1_Pooling/
+    └── config.json
+    
 ## 🗺️ Roadmap
 
 - [ ] Automated A/B testing for persona shift validation

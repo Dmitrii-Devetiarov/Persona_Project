@@ -74,7 +74,34 @@
 - [Docker](https://docs.docker.com/get-docker/), установленный на вашем компьютере
 - API-ключ Yandex Cloud с доступом к DeepSeek
 
-## Вариант 1: Загрузка из GitHub Container Registry
+### Вариант 1: Сборка из исходников
+
+```bash
+# Клонируйте репозиторий
+git clone https://github.com/Dmitrii-Devetiarov/Persona_Project.git
+cd Persona_Project
+
+# Настройте переменные окружения
+cp .env.example .env
+# Отредактируйте .env, указав свои YANDEX_API_KEY и YANDEX_FOLDER_ID (см. Конфигурация)
+
+# Загрузите и подготовьте модель E5-large
+# Вариант А: Загрузите полную модель и обрежьте её (временно требуется ~9 GB)
+python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/multilingual-e5-large')"
+# Затем скопируйте только необходимые файлы в каталог models/e5-large-lite/ (см. структуру облегченной модели ниже)
+
+# Вариант Б: Вручную создайте каталог models/e5-large-lite/ с соответствующими файлами:
+#   model.safetensors, tokenizer.json, sentencepiece.bpe.model,
+#   tokenizer_config.json, special_tokens_map.json, config.json,
+#   modules.json, sentence_bert_config.json, 1_Pooling/config.json
+
+# Сборка и запуск
+docker compose up
+```
+
+Откройте http://localhost:8501 в браузере.
+
+## Вариант 2: Загрузка из GitHub Container Registry
 
 ```bash
 # Загрузите последний образ
@@ -83,9 +110,22 @@ docker pull ghcr.io/dmitrii-devetiarov/persona-project:latest
 # Создайте директорию проекта и перейдите в неё
 mkdir persona-memory && cd persona-memory
 
+#Создайте файл конфигурации, названный docker-compose.yml со следующим содержимым:
+services:
+  persona:
+    image: ghcr.io/dmitrii-devetiarov/persona-project:latest
+    pull_policy: always
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
 # Настройте переменные окружения
 cp .env.example .env
-# Отредактируйте .env, указав свои YANDEX_API_KEY и YANDEX_FOLDER_ID
+# Отредактируйте .env, указав свои YANDEX_API_KEY и YANDEX_FOLDER_ID (см. Конфигурация)
 
 # Создайте пустую директорию data для хранения персоны
 mkdir -p data
@@ -95,20 +135,14 @@ docker compose up
 ```
 Откройте http://localhost:8501 в браузере.
 
-## Вариант 2: Сборка из исходников
-
 ```bash
-# Клонируйте репозиторий
-git clone https://github.com/Dmitrii-Devetiarov/Persona_Project.git
-cd Persona_Project
+# Pull the latest image
+docker pull ghcr.io/dmitrii-devetiarov/persona-project:latest
 
-# Настройте переменные окружения
-cp .env.example .env
-# Отредактируйте .env, указав свои YANDEX_API_KEY и YANDEX_FOLDER_ID
-
-# Соберите и запустите
-docker compose up
+# Create a project directory and navigate into it
+mkdir persona-memory && cd persona-memory
 ```
+
 Откройте http://localhost:8501 в браузере.
 
 ## ⚙️ Конфигурация
@@ -117,6 +151,22 @@ docker compose up
 |------------|----------|
 | `YANDEX_API_KEY` | API-ключ сервисного аккаунта в Yandex Cloud |
 | `YANDEX_FOLDER_ID` | ID каталога в Yandex Cloud |
+
+Примечание к модели: Папка models/e5-large-lite/ содержит обрезанную версию intfloat/multilingual-e5-large. Из неё исключены pytorch_model.bin, onnx/, openvino/ и другие несущественные файлы — оставлено только то, что необходимо sentence-transformers для работы. Это уменьшает размер с ~9 ГБ до ~2,2 ГБ. Модель полностью работоспособна.
+
+Необходимая структура папки models/e5-large-lite/:
+
+models/e5-large-lite/
+├── model.safetensors
+├── tokenizer.json
+├── sentencepiece.bpe.model
+├── tokenizer_config.json
+├── special_tokens_map.json
+├── config.json
+├── modules.json
+├── sentence_bert_config.json
+└── 1_Pooling/
+    └── config.json
 
 ## 🗺️ Дорожная карта
 
