@@ -1,7 +1,8 @@
 services:
   persona:
+    build: .
     image: persona-project:latest
-    pull_policy: never   # ← эта строка
+    pull_policy: never
     ports:
       - "8501:8501"
     env_file:
