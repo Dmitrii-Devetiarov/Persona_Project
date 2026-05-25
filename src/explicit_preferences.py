@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from src.locales import RU, EN
+
+from src.locales import EN, RU
 
 
 class ExplicitPreferenceTracker:
@@ -63,8 +64,14 @@ class ExplicitPreferenceTracker:
             "emotionality": ("explicit_emotionality_pos", "explicit_emotionality_neg"),
             "factual_accuracy": ("explicit_factual_pos", "explicit_factual_neg"),
             "verbosity": ("explicit_verbosity_pos", "explicit_verbosity_neg"),
-            "figurativeness": ("explicit_figurativeness_pos", "explicit_figurativeness_neg"),
-            "model_resistance": ("explicit_model_resistance_pos", "explicit_model_resistance_neg"),
+            "figurativeness": (
+                "explicit_figurativeness_pos",
+                "explicit_figurativeness_neg",
+            ),
+            "model_resistance": (
+                "explicit_model_resistance_pos",
+                "explicit_model_resistance_neg",
+            ),
             "comfort": ("explicit_comfort_pos", "explicit_comfort_neg"),
             "disagreement": ("explicit_disagreement_pos", "explicit_disagreement_neg"),
             "complexity": ("explicit_complexity_pos", "explicit_complexity_neg"),
@@ -72,9 +79,17 @@ class ExplicitPreferenceTracker:
         for axis, (pos_key, neg_key) in locale_keys.items():
             pos_text = self.L.get(pos_key, "")
             neg_text = self.L.get(neg_key, "")
-            self._prototype_embeddings[axis] = {
-                "positive": self.encoder.encode(f"query: {pos_text}", normalize_embeddings=True) if pos_text else None,
-                "negative": self.encoder.encode(f"query: {neg_text}", normalize_embeddings=True) if neg_text else None,
+            self._prototype_embeddings[axis] = {  # type: ignore
+                "positive": (
+                    self.encoder.encode(f"query: {pos_text}", normalize_embeddings=True)
+                    if pos_text
+                    else None
+                ),
+                "negative": (
+                    self.encoder.encode(f"query: {neg_text}", normalize_embeddings=True)
+                    if neg_text
+                    else None
+                ),
             }
 
     def detect_anchors(self, user_message: str) -> dict[str, float]:
@@ -100,8 +115,12 @@ class ExplicitPreferenceTracker:
             pos_emb = self._prototype_embeddings.get(axis, {}).get("positive")
             neg_emb = self._prototype_embeddings.get(axis, {}).get("negative")
 
-            pos_sim = float(np.dot(pos_emb, msg_embedding)) if pos_emb is not None else 0.0
-            neg_sim = float(np.dot(neg_emb, msg_embedding)) if neg_emb is not None else 0.0
+            pos_sim = (
+                float(np.dot(pos_emb, msg_embedding)) if pos_emb is not None else 0.0
+            )
+            neg_sim = (
+                float(np.dot(neg_emb, msg_embedding)) if neg_emb is not None else 0.0
+            )
 
             if pos_sim > self.COSINE_THRESHOLD and pos_sim > neg_sim:
                 result[axis] = pos_sim
@@ -123,20 +142,20 @@ class ExplicitPreferenceTracker:
         Args:
             current_vector: Current 8-axis preference vector, or None to start fresh.
             detected_anchors: Output from detect_anchors.
-            alpha: Weight for new anchors. High because anchors are explicit instructions.
+            alpha: Weight for new anchors.
+            High because anchors are explicit instructions.
 
         Returns:
             Updated preference vector.
         """
         if current_vector is None:
-            current_vector = {axis: 0.0 for axis in self.AXES}
+            current_vector = dict.fromkeys(self.AXES, 0.0)
 
         for axis in self.AXES:
             anchor_value = detected_anchors.get(axis, 0.0)
             if anchor_value != 0.0:
-                current_vector[axis] = (
-                    alpha * anchor_value
-                    + (1 - alpha) * current_vector.get(axis, 0.0)
-                )
+                current_vector[axis] = alpha * anchor_value + (
+                    1 - alpha
+                ) * current_vector.get(axis, 0.0)
 
         return current_vector

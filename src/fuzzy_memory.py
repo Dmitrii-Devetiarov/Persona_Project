@@ -1,15 +1,17 @@
 # src/fuzzy_memory.py
 """Stream A: Semantic cloud + keyword memory for context-aware prompts."""
 
-import json
 import logging
-from pathlib import Path
-from typing import Optional
+
 import numpy as np
-from sentence_transformers import SentenceTransformer
 import spacy
+from sentence_transformers import SentenceTransformer
+from spacy.tokens import Doc
+
+from src.locales import EN, RU
 
 logger = logging.getLogger(__name__)
+PARASITES = {"ru": RU["parasites"], "en": EN["parasites"]}
 
 
 class SemanticCloud:
@@ -24,47 +26,14 @@ class SemanticCloud:
     OVERLAP_RATIO = 0.25
     SERIALIZATION_VERSION = 1
 
-    # Слова-паразиты (русские)
-    RESPONSE_PARASITES_RU = [
-        "отличный вопрос", "хороший вопрос", "интересный вопрос", "правильный вопрос",
-        "отличная наблюдательность", "блестящее замечание", "точное наблюдение",
-        "вы абсолютно правы", "вы совершенно правы", "вы правы", "ты абсолютно прав",
-        "ты прав", "ты точно выделил", "ты верно подметил",
-        "давайте разберёмся", "давайте разберемся", "давайте посмотрим",
-        "вот что известно", "вот основные", "вот ключевые", "вот что важно",
-        "таким образом", "итак", "короткий ответ", "краткий ответ", "прямой ответ",
-        "я понимаю", "я вас понимаю", "понимаю вас", "понимаю твою",
-        "я чувствую", "это очень тяжело", "это нормально",
-        "спасибо за вопрос", "благодарю за вопрос",
-        "надеюсь", "если захочешь", "если хотите", "если надумаешь",
-        "если будут вопросы", "обращайтесь", "спрашивай",
-        "резонно", "вопрос в яблочко", "верно подмечено", "ключевая брешь",
-    ]
-
-    # Слова-паразиты (английские)
-    RESPONSE_PARASITES_EN = [
-        "great question", "good question", "interesting question", "excellent question",
-        "that's a great point", "brilliant observation", "spot on",
-        "you're absolutely right", "you're right", "you're totally right",
-        "you nailed it", "you got it", "exactly right",
-        "let's break this down", "let's dive in", "let's explore",
-        "here's what we know", "here are the key", "here's what matters",
-        "in summary", "so", "the bottom line", "the short answer", "simply put",
-        "i understand", "i hear you", "i see where you're coming from",
-        "i feel", "that sounds really tough", "that's totally normal",
-        "thanks for asking", "thank you for the question",
-        "i hope", "if you'd like", "if you want", "if you're interested",
-        "if you have more questions", "feel free to ask", "just ask",
-        "fair point", "right on the money", "well noted", "key gap",
-    ]
-
     def __init__(
-            self,
-            model_path: Optional[str] = None,
-            model: Optional[SentenceTransformer] = None,
-            nlp: Optional[spacy.Language] = None,
-            learning_rate: float = 0.3,
-            lang: str = "en",
+        self,
+        model_path: str | None = None,
+        model: SentenceTransformer | None = None,
+        nlp: spacy.language.Language | None = None,
+        learning_rate: float = 0.3,
+        lang: str = "en",
+        parasites: list[str] | None = None,
     ):
         if model is not None:
             self.encoder = model
@@ -75,21 +44,22 @@ class SemanticCloud:
 
         self._nlp = nlp
         self._learning_rate = learning_rate
-        self.semantic_cloud: Optional[np.ndarray] = None
+        self.semantic_cloud: np.ndarray | None = None
         self._kw_model = None
-        self._stop_words: Optional[list[str]] = None
+        self._stop_words: list[str] | None = None
         self.lang = lang
+        self._parasites = PARASITES.get(lang, PARASITES["en"])
 
     def set_language(self, lang: str) -> None:
-        """Switch parasites language. Invalidates stop-words cache."""
+        """Switch language. Invalidates stop-words cache and updates parasites."""
         self.lang = lang
-        self._stop_words = None  # принудительная перестройка кеша
+        self._parasites = PARASITES.get(lang, PARASITES["en"])
+        self._stop_words = None
 
     def _build_stop_words(self) -> list[str]:
         """Build and cache stop words list. Called once per language."""
         stop_words = []
-        parasites = self.RESPONSE_PARASITES_RU if self.lang == "ru" else self.RESPONSE_PARASITES_EN
-        for phrase in parasites:
+        for phrase in self._parasites:
             stop_words.extend(phrase.split())
         if self._nlp is not None:
             stop_words.extend(list(self._nlp.Defaults.stop_words))
@@ -100,7 +70,7 @@ class SemanticCloud:
         return int(self.MODEL_MAX_LENGTH * self.OVERLAP_RATIO)
 
     def _tokenize(self, text: str) -> list[int]:
-        if not hasattr(self.encoder, 'tokenizer') or self.encoder.tokenizer is None:
+        if not hasattr(self.encoder, "tokenizer") or self.encoder.tokenizer is None:
             raise RuntimeError("SentenceTransformer tokenizer not available.")
         return self.encoder.tokenizer.encode(text, add_special_tokens=False)
 
@@ -117,14 +87,14 @@ class SemanticCloud:
             chunk_text = self.encoder.tokenizer.decode(
                 chunk_tokens,
                 skip_special_tokens=True,
-                clean_up_tokenization_spaces=True
+                clean_up_tokenization_spaces=True,
             )
             chunks.append(chunk_text)
             start += self.MODEL_MAX_LENGTH - self._chunk_overlap
 
         return chunks
 
-    def get_embedding(self, text: str) -> Optional[np.ndarray]:
+    def get_embedding(self, text: str) -> np.ndarray | None:
         if not text or not text.strip():
             return None
 
@@ -132,7 +102,7 @@ class SemanticCloud:
         embeddings = [self.encoder.encode(f"passage: {chunk}") for chunk in chunks]
 
         if len(chunks) == 1:
-            return embeddings[0]
+            return embeddings[0]  # type: ignore
         return np.mean(embeddings, axis=0)
 
     def process_message(self, text: str) -> None:
@@ -153,19 +123,12 @@ class SemanticCloud:
             alpha = self._learning_rate * weight
             self.semantic_cloud = alpha * emb + (1 - alpha) * self.semantic_cloud
 
-    def _dynamic_top_n(self, text: str, min_n: int = 1, max_n: int = 3, ratio: float = 0.1) -> int:
+    def _dynamic_top_n(
+        self, text: str, min_n: int = 1, max_n: int = 3, ratio: float = 0.1
+    ) -> int:
         word_count = len(text.split())
         calculated = int(word_count * ratio)
         return max(min_n, min(max_n, calculated))
-
-    def _build_stop_words(self) -> list[str]:
-        """Build and cache stop words list. Called once."""
-        stop_words = []
-        for phrase in self.RESPONSE_PARASITES:
-            stop_words.extend(phrase.split())
-        if self._nlp is not None:
-            stop_words.extend(list(self._nlp.Defaults.stop_words))
-        return list(set(stop_words))
 
     def _get_stop_words(self) -> list[str]:
         """Return cached stop words, building them on first call."""
@@ -178,9 +141,12 @@ class SemanticCloud:
         if self._kw_model is None:
             try:
                 from keybert import KeyBERT
-                self._kw_model = KeyBERT(model=self.encoder)
+
+                self._kw_model = KeyBERT(model=self.encoder)  # type: ignore
             except ImportError:
-                logger.warning("KeyBERT not installed. Install with: pip install keybert")
+                logger.warning(
+                    "KeyBERT not installed. Install with: pip install keybert"
+                )
                 return []
 
         if not text or not text.strip():
@@ -195,28 +161,28 @@ class SemanticCloud:
                 stop_words=stop_words,
                 top_n=top_n,
                 use_mmr=True,
-                diversity=0.5
+                diversity=0.5,
             )
-            return keywords
+            return keywords  # type: ignore[return-value]
         except Exception as e:
             logger.warning(f"Keyword extraction failed: {e}")
             return []
 
-    def _has_noun(self, phrase: str, doc: spacy.tokens.Doc) -> bool:
+    def _has_noun(self, phrase: str, doc: Doc) -> bool:
         """Check if phrase contains at least one noun.
 
         Optimised: build noun set once, check against it.
         """
-        if not hasattr(self, '_noun_cache') or self._noun_cache.get('doc') is not doc:
+        if not hasattr(self, "_noun_cache") or self._noun_cache.get("doc") is not doc:
             noun_set = {token.text.lower() for token in doc if token.pos_ == "NOUN"}
-            self._noun_cache = {'doc': doc, 'nouns': noun_set}
+            self._noun_cache = {"doc": doc, "nouns": noun_set}
         else:
-            noun_set = self._noun_cache['nouns']
+            noun_set = self._noun_cache["nouns"]
 
         phrase_lower = phrase.lower()
         return any(noun in phrase_lower for noun in noun_set)
 
-    def _has_meaningful_words(self, phrase: str, doc: spacy.tokens.Doc) -> bool:
+    def _has_meaningful_words(self, phrase: str, doc: Doc) -> bool:
         """Check that not ALL words are stop words or parasites."""
         if self._nlp is None:
             return True
@@ -225,8 +191,9 @@ class SemanticCloud:
         meaningful = [w for w in phrase_tokens if w not in stop_words]
         return len(meaningful) > 0
 
-    def _filter_candidates(self, candidates: list[tuple[str, float]],
-                           doc: Optional[spacy.tokens.Doc]) -> list[tuple[str, float]]:
+    def _filter_candidates(
+        self, candidates: list[tuple[str, float]], doc: Doc | None
+    ) -> list[tuple[str, float]]:
         """Filter KeyBERT candidates: must contain a noun and not be all stop words."""
         if doc is None:
             return candidates
@@ -237,7 +204,9 @@ class SemanticCloud:
                 filtered.append((phrase, score))
         return filtered
 
-    def _deduplicate_keywords(self, candidates: list[tuple[str, float]]) -> list[tuple[str, float]]:
+    def _deduplicate_keywords(
+        self, candidates: list[tuple[str, float]]
+    ) -> list[tuple[str, float]]:
         """Remove overlapping keywords. Keep longer/more specific ones."""
         if not candidates:
             return []
@@ -271,12 +240,15 @@ class SemanticCloud:
 
         return result
 
-    def extract_keywords(self, text: str, top_n: Optional[int] = None) -> list[tuple[str, float]]:
+    def extract_keywords(
+        self, text: str, top_n: int | None = None
+    ) -> list[tuple[str, float]]:
         """Extract key phrases from text using KeyBERT + spaCy filtering.
 
         Args:
             text: Input text.
-            top_n: Number of keywords. If None, calculated dynamically based on text length.
+            top_n: Number of keywords.
+            If None, calculated dynamically based on text length.
 
         Returns:
             List of (keyword, score) tuples. Empty list on failure.
@@ -305,16 +277,26 @@ class SemanticCloud:
     def to_dict(self) -> dict:
         return {
             "version": self.SERIALIZATION_VERSION,
-            "cloud": self.semantic_cloud.tolist() if self.semantic_cloud is not None else None,
+            "cloud": (
+                self.semantic_cloud.tolist()
+                if self.semantic_cloud is not None
+                else None
+            ),
         }
 
     @classmethod
-    def from_dict(cls, data: dict, model_path: Optional[str] = None,
-                  model: Optional[SentenceTransformer] = None,
-                  nlp: Optional[spacy.Language] = None) -> "SemanticCloud":
+    def from_dict(
+        cls,
+        data: dict,
+        model_path: str | None = None,
+        model: SentenceTransformer | None = None,
+        nlp: spacy.language.Language | None = None,
+    ) -> "SemanticCloud":
         version = data.get("version", 0)
         if version != cls.SERIALIZATION_VERSION:
-            raise ValueError(f"Unsupported version {version}. Expected {cls.SERIALIZATION_VERSION}.")
+            raise ValueError(
+                f"Unsupported version {version}. Expected {cls.SERIALIZATION_VERSION}."
+            )
 
         instance = cls(model_path=model_path, model=model, nlp=nlp)
         cloud = data.get("cloud")
@@ -343,15 +325,17 @@ class KeywordMemory:
         kw_query = kw_query_list[0][0].lower().strip()
 
         # Извлекаем первое осмысленное предложение из ответа
-        if '.' in assistant_message:
-            first_sentence = assistant_message.split('.')[0]
-        elif '\n' in assistant_message:
-            first_sentence = assistant_message.split('\n')[0]
+        if "." in assistant_message:
+            first_sentence = assistant_message.split(".")[0]
+        elif "\n" in assistant_message:
+            first_sentence = assistant_message.split("\n")[0]
         else:
             first_sentence = assistant_message[:200]
 
         top_n = self.semantic_cloud._dynamic_top_n(first_sentence)
-        kw_response_list = self.semantic_cloud.extract_keywords(first_sentence, top_n=top_n)
+        kw_response_list = self.semantic_cloud.extract_keywords(
+            first_sentence, top_n=top_n
+        )
 
         kw_responses = [
             kw[0].lower().strip()
@@ -382,7 +366,9 @@ class KeywordMemory:
         if not self.memory:
             return []
 
-        kw_current_list = self.semantic_cloud.extract_keywords(current_question, top_n=1)
+        kw_current_list = self.semantic_cloud.extract_keywords(
+            current_question, top_n=1
+        )
         if not kw_current_list or not kw_current_list[0][0]:
             return []
         kw_current = kw_current_list[0][0].lower().strip()
@@ -421,7 +407,9 @@ class KeywordMemory:
                 self._access_order.remove(kw_query)
                 self._access_order.append(kw_query)
 
-        logger.debug(f"Memory query '{kw_current}' matched: {[m[0] for m in top_matches]}")
+        logger.debug(
+            f"Memory query '{kw_current}' matched: {[m[0] for m in top_matches]}"
+        )
         return all_keywords
 
     def to_dict(self) -> dict:

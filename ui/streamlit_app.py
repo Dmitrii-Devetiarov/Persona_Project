@@ -7,15 +7,16 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import streamlit as st
-from src.persona_manager import PersonaManager
-from src.locales import RU, EN
+import json  # noqa: E402
+import os  # noqa: E402
+import time  # noqa: E402
 
-import os
-from openai import OpenAI
-from dotenv import load_dotenv
-import json
-import time
+import streamlit as st  # noqa: E402
+from dotenv import load_dotenv  # noqa: E402
+from openai import OpenAI  # noqa: E402
+
+from src.locales import EN, RU  # noqa: E402
+from src.persona_manager import PersonaManager  # noqa: E402
 
 load_dotenv()
 
@@ -30,11 +31,7 @@ L = {"ru": RU, "en": EN}[st.session_state.lang]
 # ============================================================
 # Page config
 # ============================================================
-st.set_page_config(
-    page_title=L["title"],
-    page_icon="🧠",
-    layout="centered"
-)
+st.set_page_config(page_title=L["title"], page_icon="🧠", layout="centered")
 
 st.title(L["title"])
 st.caption(L["subtitle"])
@@ -61,7 +58,7 @@ def get_client():
     return OpenAI(
         api_key=api_key,
         base_url="https://ai.api.cloud.yandex.net/v1",
-        project=folder_id
+        project=folder_id,
     )
 
 
@@ -77,14 +74,15 @@ try:
     import tiktoken
 
     enc = tiktoken.get_encoding("cl100k_base")
+
     def count_tokens(messages: list[dict]) -> int:
         total = 0
         for msg in messages:
             total += len(enc.encode(msg["content"])) + 4
         return total
 
-
 except ImportError:
+
     def count_tokens(messages: list[dict]) -> int:
         # Approximation: Russian ~1.5 tokens per word, English ~ 1.3
         ratio = 1.5 if st.session_state.lang == "ru" else 1.3
@@ -92,6 +90,7 @@ except ImportError:
         for msg in messages:
             total += int(len(msg["content"].split()) * ratio) + 4
         return total
+
 
 # ============================================================
 # Init session state
@@ -139,7 +138,11 @@ def save_persona_to_file(name: str):
         raise ValueError("Invalid persona name")
     personas_dir = PROJECT_ROOT / "data" / "personas"
     personas_dir.mkdir(parents=True, exist_ok=True)
-    prefs = st.session_state.manual_prefs if st.session_state.mode == "manual" else manager.preferences
+    prefs = (
+        st.session_state.manual_prefs
+        if st.session_state.mode == "manual"
+        else manager.preferences
+    )
     persona_data = {
         "name": safe_name,
         "mode": st.session_state.mode,
@@ -153,7 +156,7 @@ def save_persona_to_file(name: str):
 
 
 def load_persona_from_file(filepath: Path) -> dict:
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -246,8 +249,16 @@ AXIS_CHOICES = {
     ],
 }
 
-all_axes = ["emotionality", "factual_accuracy", "verbosity", "figurativeness",
-            "disagreement", "comfort", "model_resistance", "complexity"]
+all_axes = [
+    "emotionality",
+    "factual_accuracy",
+    "verbosity",
+    "figurativeness",
+    "disagreement",
+    "comfort",
+    "model_resistance",
+    "complexity",
+]
 
 # ============================================================
 # Sidebar
@@ -258,7 +269,7 @@ with st.sidebar:
         "Language / Язык",
         options=["ru", "en"],
         index=0 if st.session_state.lang == "ru" else 1,
-        key="lang_selector"
+        key="lang_selector",
     )
     if lang != st.session_state.lang:
         st.session_state.lang = lang
@@ -275,8 +286,8 @@ with st.sidebar:
             color = axis_color(value)
             st.markdown(
                 f'<span style="color:{color}; font-size:18px;">●</span> '
-                f'{axis}: {value:+.3f}',
-                unsafe_allow_html=True
+                f"{axis}: {value:+.3f}",
+                unsafe_allow_html=True,
             )
     else:
         st.caption(L["no_data"])
@@ -295,7 +306,7 @@ with st.sidebar:
         L["context_remaining"],
         f"{remaining_pct:.0%}",
         delta=f"~{remaining_abs:,} tokens",
-        delta_color="off"
+        delta_color="off",
     )
     st.markdown(context_indicator(remaining_pct), unsafe_allow_html=True)
 
@@ -309,9 +320,13 @@ with st.sidebar:
     mode = st.radio(
         L["mode_section"],
         options=["auto", "manual", "intact"],
-        format_func=lambda x: {"auto": L["mode_auto"], "manual": L["mode_manual"], "intact": L["mode_intact"]}[x],
+        format_func=lambda x: {
+            "auto": L["mode_auto"],
+            "manual": L["mode_manual"],
+            "intact": L["mode_intact"],
+        }[x],
         index=["auto", "manual", "intact"].index(st.session_state.mode),
-        label_visibility="collapsed"
+        label_visibility="collapsed",
     )
     st.session_state.mode = mode
 
@@ -319,8 +334,26 @@ with st.sidebar:
     st.session_state.update_persona = st.checkbox(
         L["update_persona_label"],
         value=st.session_state.update_persona,
-        help=L["update_persona_help"]
+        help=L["update_persona_help"],
     )
+
+    # --- Флаги памяти ---
+    use_memory = st.session_state.get("use_memory", True)
+    update_memory = st.session_state.get("update_memory", True)
+
+    st.checkbox(
+        L["use_memory_label"],
+        value=use_memory,
+        key="use_memory",
+        help=L["use_memory_help"],
+    )
+    st.checkbox(
+        L["update_memory_label"],
+        value=update_memory,
+        key="update_memory",
+        help=L["update_memory_help"],
+    )
+
     # === Пользовательская ремарка ===
     st.divider()
     st.subheader(L["user_instruction_label"])
@@ -341,9 +374,7 @@ with st.sidebar:
     for i, axis in enumerate(all_axes):
         with cols[i % 2]:
             st.session_state.enabled_axes[axis] = st.checkbox(
-                axis,
-                value=st.session_state.enabled_axes[axis],
-                key=f"enable_{axis}"
+                axis, value=st.session_state.enabled_axes[axis], key=f"enable_{axis}"
             )
 
     # === Ручные ползунки ===
@@ -357,11 +388,18 @@ with st.sidebar:
             choices = AXIS_CHOICES[axis]
             labels = [label for _, label in choices]
             values = [val for val, _ in choices]
-            current_val = st.session_state.manual_prefs.get(axis, manager.preferences.get(axis, 0.0))
-            nearest_idx = min(range(len(values)), key=lambda i: abs(values[i] - current_val))
+            current_val = st.session_state.manual_prefs.get(
+                axis, manager.preferences.get(axis, 0.0)
+            )
+            nearest_idx = min(
+                range(len(values)), key=lambda i: abs(values[i] - current_val)
+            )
             selected_label = st.select_slider(
-                label=axis, options=labels, value=labels[nearest_idx],
-                key=f"slider_{axis}", label_visibility="visible"
+                label=axis,
+                options=labels,
+                value=labels[nearest_idx],
+                key=f"slider_{axis}",
+                label_visibility="visible",
             )
             selected_val = values[labels.index(selected_label)]
             manual_prefs[axis] = selected_val
@@ -371,7 +409,9 @@ with st.sidebar:
 
     # === Сохранение/загрузка персоны ===
     st.subheader(L["save_persona"])
-    persona_name = st.text_input(L["persona_name_placeholder"], placeholder=L["persona_name_placeholder"])
+    persona_name = st.text_input(
+        L["persona_name_placeholder"], placeholder=L["persona_name_placeholder"]
+    )
     if st.button(L["save_persona_button"]):
         if persona_name.strip():
             filepath = save_persona_to_file(persona_name.strip())
@@ -384,13 +424,17 @@ with st.sidebar:
         saved_personas = list(personas_dir.glob("*.json"))
         if saved_personas:
             persona_names = [p.stem for p in saved_personas]
-            selected_persona = st.selectbox(L["load_persona"], options=[""] + persona_names)
+            selected_persona = st.selectbox(
+                L["load_persona"], options=[""] + persona_names
+            )
             if selected_persona:
                 filepath = personas_dir / f"{selected_persona}.json"
                 persona_data = load_persona_from_file(filepath)
                 if st.button(f"{L['load_persona_button']} '{selected_persona}'"):
                     st.session_state.manual_prefs = persona_data.get("preferences", {})
-                    st.session_state.enabled_axes = persona_data.get("enabled_axes", st.session_state.enabled_axes)
+                    st.session_state.enabled_axes = persona_data.get(
+                        "enabled_axes", st.session_state.enabled_axes
+                    )
                     if persona_data.get("mode"):
                         st.session_state.mode = persona_data["mode"]
                     st.success(f"{L['success_persona_loaded']} '{selected_persona}'")
@@ -402,8 +446,9 @@ with st.sidebar:
     st.subheader(L["train_section"])
     uploaded_dialogs = st.file_uploader(
         L["train_uploader"],
-        type="json", accept_multiple_files=True,
-        help=L["train_uploader"]
+        type="json",
+        accept_multiple_files=True,
+        help=L["train_uploader"],
     )
     if uploaded_dialogs:
         if st.button(L["train_button"]):
@@ -413,7 +458,7 @@ with st.sidebar:
                     dialog_data = json.load(uploaded_file)
                     messages = dialog_data.get("messages", [])
                     if messages:
-                        manager.update_after_dialog(messages)
+                        manager.update_after_dialog(messages, update_memory)
                         success_count += 1
                 except Exception as e:
                     st.error(f"{L['error_persona_update']} {uploaded_file.name}: {e}")
@@ -474,7 +519,9 @@ def get_effective_prompt(user_input: str) -> str:
     else:  # auto
         is_first = len(st.session_state.messages) == 0
         if is_first:
-            prompt = manager.get_persona_prompt(current_question=user_input, lang=st.session_state.lang)
+            prompt = manager.get_persona_prompt(
+                current_question=user_input, lang=st.session_state.lang
+            )
         else:
             prompt = manager.get_persona_prompt(lang=st.session_state.lang)
         if prompt:
@@ -485,7 +532,11 @@ def get_effective_prompt(user_input: str) -> str:
                     include = True
                     for axis in enabled:
                         if not enabled[axis]:
-                            label = manager._get_label(axis, manager.preferences.get(axis, 0.0), lang=st.session_state.lang)
+                            label = manager._get_label(
+                                axis,
+                                manager.preferences.get(axis, 0.0),
+                                lang=st.session_state.lang,
+                            )
                             if label in line:
                                 include = False
                                 break
@@ -498,11 +549,13 @@ def get_effective_prompt(user_input: str) -> str:
     # Добавляем пользовательскую инструкцию (для всех режимов)
     user_instruction = st.session_state.get("user_instruction", "").strip()
     if user_instruction:
-        instruction_line = f"{L['user_instruction_frame']} {user_instruction} {L['user_instruction_frame_close']}"
-        if prompt and L['prompt_frame_close'] in prompt:
+        instruction_line = f"{L['user_instruction_frame']}"
+        f"{user_instruction}"
+        f"{L['user_instruction_frame_close']}"
+        if prompt and L["prompt_frame_close"] in prompt:
             prompt = prompt.replace(
-                L['prompt_frame_close'],
-                f"{instruction_line}\n{L['prompt_frame_close']}"
+                L["prompt_frame_close"],
+                f"{instruction_line}\n{L['prompt_frame_close']}",
             )
         elif prompt:
             prompt = prompt + "\n" + instruction_line
@@ -510,6 +563,7 @@ def get_effective_prompt(user_input: str) -> str:
             prompt = instruction_line
 
     return prompt
+
 
 # ============================================================
 # Chat input
@@ -538,7 +592,7 @@ if user_input := st.chat_input(L["chat_input_placeholder"]):
             temperature=0.5,
             messages=api_messages,
             max_tokens=3000,
-            stream=True
+            stream=True,
         )
         reply = ""
         for chunk in response:
@@ -574,19 +628,22 @@ col1, col2, col3 = st.columns(3)
 with col1:
     if st.button(L["save_selected"]):
         if st.session_state.selected_messages:
-            selected = [st.session_state.messages[i] for i in sorted(st.session_state.selected_messages)]
+            selected = [
+                st.session_state.messages[i]
+                for i in sorted(st.session_state.selected_messages)
+            ]
             dialog = {
                 "session_id": f"dialog_branch_{int(time.time())}",
                 "source": "streamlit_ui",
                 "theme_tags": [],
-                "messages": selected
+                "messages": selected,
             }
             dialog_json = json.dumps(dialog, ensure_ascii=False, indent=2)
             st.download_button(
                 label=L["download_selected"],
                 data=dialog_json,
                 file_name=f"branch_{dialog['session_id']}.json",
-                mime="application/json"
+                mime="application/json",
             )
         else:
             st.warning(L["warning_no_selection"])
@@ -598,26 +655,32 @@ with col2:
                 "session_id": f"dialog_full_{int(time.time())}",
                 "source": "streamlit_ui",
                 "theme_tags": [],
-                "messages": st.session_state.messages
+                "messages": st.session_state.messages,
             }
             dialog_json = json.dumps(dialog, ensure_ascii=False, indent=2)
             st.download_button(
                 label=L["download_all"],
                 data=dialog_json,
                 file_name=f"dialog_{dialog['session_id']}.json",
-                mime="application/json"
+                mime="application/json",
             )
         else:
             st.warning(L["warning_no_messages"])
 
 with col3:
-    uploaded_file = st.file_uploader(L["load_dialog"], type="json", label_visibility="collapsed", key="load_dialog")
+    uploaded_file = st.file_uploader(
+        L["load_dialog"], type="json", label_visibility="collapsed", key="load_dialog"
+    )
     if uploaded_file is not None:
         try:
             dialog_data = json.load(uploaded_file)
             st.session_state.messages = dialog_data.get("messages", [])
             st.session_state.selected_messages = set()
-            st.success(f"{L['success_load']} {len(st.session_state.messages)} {L['messages_loaded']}")
+            st.success(
+                f"{L['success_load']}"
+                f"{len(st.session_state.messages)}"
+                f"{L['messages_loaded']}"
+            )
             st.rerun()
         except Exception as e:
             st.error(f"{L['error_persona_update']} {e}")
