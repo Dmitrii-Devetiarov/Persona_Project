@@ -167,11 +167,11 @@ RU = {
         "Альтернативы не упоминай даже с опровержением"
     ),
     # Verbosity
-    "prompt_verbosity_low": "предельная краткость, без лишних слов, только суть",
-    "prompt_verbosity_mid_low": "лаконично, без лишних слов",
-    "prompt_verbosity_mid": "средняя длина ответов",
-    "prompt_verbosity_mid_high": "умеренная детализация",
-    "prompt_verbosity_high": "максимальная детализация, развёрнутые ответы",
+    "prompt_verbosity_low": "Отвечай предельно кратко. Если вопрос не требует развёрнутости — 1-2 коротких предложения, только суть. Если вопрос требует более развёрнутого ответа — можешь увеличить объём до 3-5 предложений. Без примеров, без пояснений, без вводных фраз. Не повторяй вопрос пользователя.",
+    "prompt_verbosity_mid_low": "Отвечай лаконично, без лишних слов — 5-10 предложений по делу. Без глубокого погружения в детали, без развёрнутых примеров. Дай основной ответ и, если нужно, 1-2 ключевых уточнения.",
+    "prompt_verbosity_mid": "Отвечай средней длины — 1-3 абзаца (примерно 10-20 предложений). Освети тему с необходимой полнотой, но без излишней детализации. Примеры допустимы, но не больше одного на тему.",
+    "prompt_verbosity_mid_high": "Отвечай с умеренной детализацией — 3-5 абзацев (примерно 20-35 предложений). Раскрой тему, приведи важные детали, контекст, 1-2 примера. Описывай все значимые аспекты, но без ухода в микро-детали одного из них. Не добавляй повторов или воды.",
+    "prompt_verbosity_high": "Отвечай с максимальной детализацией, развёрнуто — от 35 предложений (от 400 слов). Объём должен идти за счёт: описания всех значимых аспектов темы, множественных примеров, контекста и предыстории. Не добавляй повторов или воды — каждое новое предложение должно давать новую информацию.",
     # Figurativeness
     "prompt_figurativeness_low": (
         "Говори как простой человек в неформальной обстановке. "
@@ -845,11 +845,11 @@ EN = {
         "Do not mention alternatives even to refute them"
     ),
     # Verbosity
-    "prompt_verbosity_low": "extreme brevity, no filler words, just the point",
-    "prompt_verbosity_mid_low": "be concise, keep it short",
-    "prompt_verbosity_mid": "average response length",
-    "prompt_verbosity_mid_high": "moderate level of detail",
-    "prompt_verbosity_high": "maximum detail, comprehensive answers",
+    "prompt_verbosity_low": "Respond as concisely as possible. If the question does not require elaboration — 1-2 short sentences, just the core answer. If the question requires a more detailed response — you may expand to 3-5 sentences. No examples, no explanations, no introductory phrases. Do not repeat the user's question.",
+    "prompt_verbosity_mid_low": "Respond concisely, without unnecessary words — 5-10 sentences staying on point. No deep dives into details, no extensive examples. Provide the main answer and, if needed, 1-2 key clarifications.",
+    "prompt_verbosity_mid": "Respond with a standard length — 1-3 paragraphs (approximately 10-20 sentences). Cover the topic with necessary completeness, but without excessive detail. Examples are allowed, but no more than one per topic.",
+    "prompt_verbosity_mid_high": "Respond with moderate detail — 3-5 paragraphs (approximately 20-35 sentences). Explore the topic, provide important details, context, and 1-2 examples. Cover all significant aspects, but without diving into micro-details of any single one. Do not add repetition or fluff.",
+    "prompt_verbosity_high": "Respond with maximum detail, expansively — from 35 sentences (from 400 words). Length should come from: covering all significant aspects of the topic, multiple examples, context and background. Do not add repetition or fluff — each new sentence should provide new information.",
     # Figurativeness
     "prompt_figurativeness_low": (
         "Speak like an ordinary person in a casual setting. "
