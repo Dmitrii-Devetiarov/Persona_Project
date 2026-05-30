@@ -7,16 +7,16 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import json  # noqa: E402
-import os  # noqa: E402
-import time  # noqa: E402
+import json
+import os
+import time
 
-import streamlit as st  # noqa: E402
-from dotenv import load_dotenv  # noqa: E402
-from openai import OpenAI  # noqa: E402
+import streamlit as st
+from dotenv import load_dotenv
+from openai import OpenAI
 
-from src.locales import EN, RU  # noqa: E402
-from src.persona_manager import PersonaManager  # noqa: E402
+from src.locales import EN, RU 
+from src.persona_manager import PersonaManager
 
 load_dotenv()
 
@@ -67,7 +67,7 @@ client = get_client()
 # ============================================================
 # Token counter
 # ============================================================
-MODEL_MAX_TOKENS = 128000
+MODEL_MAX_TOKENS = 1000000
 WARNING_THRESHOLD = 0.2
 
 try:
@@ -588,10 +588,11 @@ if user_input := st.chat_input(L["chat_input_placeholder"]):
 
     try:
         response = client.chat.completions.create(
-            model=f"gpt://{folder_id}/deepseek-v32/latest",
+            model=f"gpt://{folder_id}/deepseek-v4-flash/latest" ,
             temperature=0.5,
             messages=api_messages,
-            max_tokens=3000,
+            max_tokens=100000,
+            reasoning_effort = None,
             stream=True,
         )
         reply = ""
